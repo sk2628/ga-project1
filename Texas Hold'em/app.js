@@ -67,10 +67,15 @@ class Game {
         this.playerCards = [];  //2nd and 4th cards
         this.communityCards = [];   //5th to 7th cards
         this.players = [];
+        this.totalCardCount = 0;
     }
 
     preFlopCardCount () {
         return (this.playerCount * 2) + 3;
+    }
+
+    getTotalCardCount () {
+        return (this.totalCardCount);
     }
 
     generatePlayerProfile (initialBalance) {
@@ -86,7 +91,6 @@ class Game {
             this.players.push(myPlayer);
         }
     }
-
 }
 
 class Helper {
@@ -126,7 +130,6 @@ class Helper {
     static printMsg = (message, clearMsg) => {
        // if(clearMsg == true){
            $('#status').children().remove();
-           console.log('Emptying #status...');
         //}
         $('<div>').text(message).prependTo('#status');
         console.log(message);
@@ -140,11 +143,12 @@ $(() => {
     let minimumAmount = 50;
     let tableAmount = 0;
     let currentRound = 0;
+    let currentRoundPlayerAccBet = 0;
 
     const startGame = () => {
         myGame = new Game();
         myGame.playerCount = 2;
-        myGame.deckCount = 4;
+        myGame.deckCount = 1;
         myGame.minimumAmount = minimumAmount;
         myGame.generatePlayerProfile(5000); // Default Amount as $5,000
         myDealer = Helper.findDealer(myGame.players);
@@ -169,11 +173,12 @@ $(() => {
     const createNewDeck = () => {
 
         $.ajax({
-                url:'https://deckofcardsapi.com/api/deck/new/' +
+                url:'https://deckofcardsapi.com/api/deck/new/shuffle/' +
                     '?jokers=0&deck_count=' + myGame.deckCount
             }).then(
                 (data)=>{
                     populateNewDeck(data);
+                    console.log(data);
                 },
                 ()=>{
                     console.log('bad request');
@@ -181,15 +186,16 @@ $(() => {
         );
     }
 
-    //Draw 3 community Cards and 2 cards for each player
+    //Draw all cards. and store them in an local array for processing
     const startPreFlop = (deckId) => {
         $.ajax({
                 url:'https://deckofcardsapi.com/api/deck/' + deckId +
-                    '/draw/?count=' + myGame.preFlopCardCount()
+                    '/draw/?count=' + myGame.getTotalCardCount()
 
             }).done(
                 (data)=>{
                     populatePreFlopCards(data);
+                    console.log(data);
                 },
                 ()=>{
                     console.log('bad request');
@@ -202,6 +208,12 @@ $(() => {
             $('#community1').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[0].image + ')').addClass('communityCards').addClass('community1');
             $('#community2').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[1].image + ')').addClass('communityCards').addClass('community2');
             $('#community3').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[2].image + ')').addClass('communityCards').addClass('community3');
+        }
+        else if(round === 3){
+            $('#community4').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[3].image + ')').addClass('communityCards').addClass('community4');
+        }
+        else if(round === 4){
+            $('#community5').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[4].image + ')').addClass('communityCards').addClass('community5');
         }
     }
 
@@ -297,53 +309,69 @@ $(() => {
                 amount = 200;
                 break;
             default:
+                amount = 0;
         }
         updatePlayerBet(amount, round);
     }
 
     const betCall = (dealerOrPlayer, round) => {
         //PreFlop Round, move the bets to the table, and take turn
-       if(round === 1 && dealerOrPlayer.isTurn){
-            let dealerMatchAmount = 0;
-            dealerMatchAmount = (dealerOrPlayer.preFlopHoldingAmount + dealerOrPlayer.blindAmount) - myDealer.blindAmount;
-            //let allEquals =  myGame.players.every(element => element.preFlopHoldingAmount === compareAmount);
-            //Move Holding Amount to confirm amount and clear the holding amount
-            if(dealerMatchAmount >= 0){
-                Helper.printMsg("Dealer turn? " + myDealer.isTurn);
-                Helper.printMsg("Player turn? " + myPlayer.isTurn);
+        Helper.printMsg("Dealer turn? " + myDealer.isTurn);
+        Helper.printMsg("Player turn? " + myPlayer.isTurn);
+        let dealerMatchAmount = 0;
 
-                //Player Handling - Moved Confirmed Amount and reset preflop amount
-                dealerOrPlayer.preFlopAmount = dealerOrPlayer.preFlopHoldingAmount;
-                dealerOrPlayer.preFlopHoldingAmount = 0;
-                populatePlayerBet(0);
+        if(round == 1){
+            dealerMatchAmount = (currentRoundPlayerAccBet + dealerOrPlayer.blindAmount) - myDealer.blindAmount;
+        }
+        else if (round == 2){
+            dealerMatchAmount = currentRoundPlayerAccBet - myDealer.flopHoldingAmount;
+        }
+        else if (round == 3){
+            dealerMatchAmount = currentRoundPlayerAccBet - myDealer.turnHoldingAmount;
+        }
+        else if (round == 4){
+            dealerMatchAmount = currentRoundPlayerAccBet - myDealer.riverHoldingAmount;
+        }
 
-                //Update Table after player
-                setTableBalance(dealerOrPlayer.preFlopAmount);
-                Helper.printMsg("Moved " + dealerOrPlayer.preFlopAmount + " from Player to Table.");
+        if(dealerMatchAmount >= 0){ //Bet match the minimum placed by dealer. proceed to the next stage
 
-                //Table Handling
-                setTableBalance(dealerMatchAmount);
-                populateTableBalance();
+            //Player Handling - Moved Confirmed Amount and reset preflop amount
+            //.preFlopAmount = currentRoundPlayerAccBet;
 
-                //if player raise amount higher than the preflop amount, dealer will automatically match it
-                setAndRotateTurn(myDealer, myPlayer);
-                updateDealerBet(dealerMatchAmount, currentRound);
-                Helper.printMsg("Dealer bet: " + Helper.formatAmount(dealerMatchAmount));
+            //Update Table after player
+            setTableBalance(currentRoundPlayerAccBet);
+            Helper.printMsg("Moved " + currentRoundPlayerAccBet + " from Player to Table.");
 
-                currentRound++;
-                setAndRotateTurn(myDealer, myPlayer);
+            currentRoundPlayerAccBet = 0; //Reset current bet amount to 0
+            populatePlayerBet(currentRoundPlayerAccBet);
 
-                Helper.printMsg("PreFlop (Round 1) Completed. Current Round: " + currentRound);
-                drawAndRevealCard(currentRound);
+            //Table Handling
+            setTableBalance(dealerMatchAmount);
+            populateTableBalance();
+
+            //if player raise amount higher than the preflop amount, dealer will automatically match it
+            setAndRotateTurn(myDealer, myPlayer);
+            updateDealerBet(dealerMatchAmount, currentRound);
+            Helper.printMsg("Dealer bet: " + Helper.formatAmount(dealerMatchAmount));
+
+            currentRound++;
+            setAndRotateTurn(myDealer, myPlayer);
+
+            Helper.printMsg("Round " + round + " Completed");
+            drawAndRevealCard(currentRound);
+
+            if (currentRound === 5){
+                console.log("TO-DO: Determine Winner...");
             }
-            else{
-                alert("Please bet an additional: " + Helper.formatAmount(Math.abs(dealerMatchAmount)));
-            }
+        }
+        else{
+            alert("Please bet an additional: " + Helper.formatAmount(Math.abs(dealerMatchAmount)));
         }
     }
 
     //DOM MANIPULATIONS
     const populateNewDeck = (response, deckId) => {
+        myGame.totalCardCount = response.remaining
         deckId = response.deck_id;
         myGame.deckId = deckId;
         startPreFlop(deckId);
@@ -365,34 +393,40 @@ $(() => {
 
     const populatePreFlopCards = (response) => {
         let myCard;
+        let cardSequence = 0;
         //assign cards to variable
-        for (let i = 0; i < response.cards.length; i++){
-            //assign 1st and 3rd card to dealer
-            if (i === 0 || i === 2){
-                myCard = new Card();
-                myCard.image = response.cards[i].images['svg'];
-                myCard.value = response.cards[i].value;
-                myCard.suit = response.cards[i].suit;
-                myCard.code = response.cards[i].code;
-                myGame.dealerCards.push(myCard);
-            }
-            //assign 2nd and 4th card to player
-            else if (i === 1 || i === 3){
-                myCard = new Card();
-                myCard.image = response.cards[i].images['svg'];
-                myCard.value = response.cards[i].value;
-                myCard.suit = response.cards[i].suit;
-                myCard.code = response.cards[i].code;
-                myGame.playerCards.push(myCard);
-            }
-            //assign the rest of the card to community (on table)
-            else{
-                myCard = new Card();
-                myCard.image = response.cards[i].images['svg'];
-                myCard.value = response.cards[i].value;
-                myCard.suit = response.cards[i].suit;
-                myCard.code = response.cards[i].code;
-                myGame.communityCards.push(myCard);
+        while(cardSequence < 9){
+            for (let i = 0; i < response.cards.length; i++){
+                //assign 1st and 3rd card to dealer
+                if(response.cards[i].code !== "XX" && (cardSequence === 0 || cardSequence === 2)){ //If Joker Card, then skip next
+                    myCard = new Card();
+                    myCard.image = response.cards[i].images['svg'];
+                    myCard.value = response.cards[i].value;
+                    myCard.suit = response.cards[i].suit;
+                    myCard.code = response.cards[i].code;
+                    myGame.dealerCards.push(myCard);
+                    cardSequence++;
+                }
+                //assign 2nd and 4th card to player
+                else if(response.cards[i].code !== "XX" && (cardSequence === 1 || cardSequence === 3)){//If Joker Card, then skip next
+                    myCard = new Card();
+                    myCard.image = response.cards[i].images['svg'];
+                    myCard.value = response.cards[i].value;
+                    myCard.suit = response.cards[i].suit;
+                    myCard.code = response.cards[i].code;
+                    myGame.playerCards.push(myCard);
+                    cardSequence++;
+                }
+                //assign the rest of the card to community (on table)
+                else if(response.cards[i].code !== "XX" && (cardSequence >= 3 && cardSequence <= 8)){ //Drawing 5 community card
+                    myCard = new Card();
+                    myCard.image = response.cards[i].images['svg'];
+                    myCard.value = response.cards[i].value;
+                    myCard.suit = response.cards[i].suit;
+                    myCard.code = response.cards[i].code;
+                    myGame.communityCards.push(myCard);
+                    cardSequence++;
+                }
             }
         }
         //Display the cards on table
@@ -446,9 +480,6 @@ $(() => {
     const updateDealerBet = (amount, round) => {
         let tempAmount = parseInt(amount);
 
-        if(amount !== 'undefined'){
-
-        }
         //Round 1 - Preflop
         if(round === 0){
             //$('#dealerBetLabel').text(Helper.formatAmount(myDealer.preFlopHoldingAmount));
@@ -471,23 +502,21 @@ $(() => {
 
     const updatePlayerBet = (amount, round) => {
         let tempAmount = parseInt(amount);
+        currentRoundPlayerAccBet += amount;
 
-        if(amount !== 'undefined'){
-
-        }
         if(round === 0){
             populatePlayerBalance();
             populateTableBalance();
         }
-        else if(round === 1){
-            Helper.printMsg("PreFlop(Round 1): Player adding... " + tempAmount);
-            myPlayer.preFlopHoldingAmount += tempAmount;
+        else {  //All Rounds
+            Helper.printMsg("Player adding... " + tempAmount);
+            //myPlayer.preFlopHoldingAmount += tempAmount;
             myPlayer.updateBalance(-(tempAmount));
-            populatePlayerBet(Helper.formatAmount(myPlayer.preFlopHoldingAmount));
+            populatePlayerBet(Helper.formatAmount(currentRoundPlayerAccBet));
             populatePlayerBalance();
             populateTableBalance();
-            Helper.printMsg("PreFlop(Round 1): Player added... " + myPlayer.preFlopHoldingAmount);
-            Helper.printMsg("PreFlop(Round 1): Player balance is now... " + myPlayer.currentBalance);
+            Helper.printMsg("Player added... " + currentRoundPlayerAccBet);
+            Helper.printMsg("Player balance is now... " + myPlayer.currentBalance);
             //populateTableBalance(myPlayer, '#playerBalance');
         }
     }
