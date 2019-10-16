@@ -65,7 +65,7 @@ class Game {
         this.minimumAmount = minimumAmount;
         this.dealerCards = [];  //1st and 3rd cards
         this.playerCards = [];  //2nd and 4th cards
-        this.communityCards = [];   //5th to 7th cards
+        this.communityCards = [];   //5th to 9th cards
         this.players = [];
         this.totalCardCount = 0;
     }
@@ -90,6 +90,68 @@ class Game {
             }
             this.players.push(myPlayer);
         }
+    }
+
+    sortBySuit (arrayParam) {
+        // sort by name
+        arrayParam.sort(function(a, b) {
+            var nameA = a.suit.toUpperCase(); // ignore upper and lowercase
+            var nameB = b.suit.toUpperCase(); // ignore upper and lowercase
+            if (nameA < nameB) {
+                return -1;
+            }
+            if (nameA > nameB) {
+                return 1;
+            }
+            return 0;
+        });
+        return arrayParam;
+    }
+
+    sortByValue (arrayParam) {
+        arrayParam.sort(function (a, b) {
+            return a.value - b.value;
+        });
+        return arrayParam;
+    }
+
+    sortByLargestValue (arrayParam) {
+        arrayParam.sort(function (a, b) {
+            return b.value - a.value;
+        });
+        return arrayParam;
+    }
+
+    returnLargestValue (arrayParam) {
+        arrayParam.sort(function (a, b) {
+            return b.value - a.value;
+        });
+        return arrayParam[0].value;
+    }
+
+    //Function to handle jack, queen, king, ace and non-numeric
+    substituteValue (arrayParam) {
+        let tempArray = [];
+        let tempValue;
+
+        for (let i = 0; i < arrayParam.length; i++){
+            if(arrayParam[i].value === "JACK"){
+                arrayParam[i].value = 11;
+            }
+            else if (arrayParam[i].value === "QUEEN"){
+                arrayParam[i].value = 12;
+            }
+            else if (arrayParam[i].value === "KING"){
+                arrayParam[i].value = 13;
+            }
+            else if (arrayParam[i].value === "ACE"){
+                arrayParam[i].value = 14;
+            }
+            else {
+                arrayParam[i].value = parseInt(arrayParam[i].value);
+            }
+        }
+        return arrayParam;
     }
 }
 
@@ -162,7 +224,7 @@ $(() => {
     }
 
     const disabledButton = (button) => {
-        button.removeClass().addClass('btn').addClass('btn-secondary').addClass('disabled');
+        button.removeClass().addClass('btn').addClass('btn-secondary').addClass('disabled').addClass('disabledButton');
     }
 
     const enabledButton = (button) => {
@@ -214,6 +276,11 @@ $(() => {
         }
         else if(round === 4){
             $('#community5').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[4].image + ')').addClass('communityCards').addClass('community5');
+        }
+        else if (round === 5){
+            $('#dealer1').removeClass('card-face-down-rotated').css('background-image','url(' + myGame.dealerCards[0].image + ')');
+            // $('#dealer2').css('background-image','url(' + myGame.dealerCards[1].image + ')');
+            $('#dealer2').removeClass('card-face-down-rotated').css('background-image','url(' + myGame.dealerCards[1].image + ')');
         }
     }
 
@@ -295,6 +362,11 @@ $(() => {
     const setBetAmount = (value, round) => {
         let amount;
 
+        if(round >= 5){
+            Helper.printMsg("Game completed. No chips is allowed. ");
+            return;
+        }
+
         switch(value){
             case "blueChipArea":
                 amount = 25;
@@ -357,11 +429,13 @@ $(() => {
             currentRound++;
             setAndRotateTurn(myDealer, myPlayer);
 
-            Helper.printMsg("Round " + round + " Completed");
+            Helper.printMsg("Round " + round + " completed");
             drawAndRevealCard(currentRound);
 
             if (currentRound === 5){
                 console.log("TO-DO: Determine Winner...");
+                calculateWinner(myDealer, myPlayer);
+                disabledButton($('#betCallBtn'));
             }
         }
         else{
@@ -488,14 +562,16 @@ $(() => {
             //populateTableBalance(myDealer, '#dealerBalance'); //Refresh table amount
             // populateTableBet(myDealer.preFlopHoldingAmount); //Refresh table amount
         }
-        else if(round === 1){
-            myDealer.preFlopHoldingAmount += tempAmount;
+        else {
+            Helper.printMsg("Dealer adding... " + tempAmount);
 
             // myDealer.currentBalance -= tempAmount;
             myDealer.updateBalance(-(tempAmount));
-            populateDealerBet(Helper.formatAmount(myDealer.preFlopHoldingAmount));
+            populateDealerBet(Helper.formatAmount(currentRoundPlayerAccBet));
             populateDealerBalance();
             populateTableBalance();
+            Helper.printMsg("Dealer added... " + currentRoundPlayerAccBet);
+            Helper.printMsg("Dealer balance is now... " +  myDealer.currentBalance);
             //populateTableBalance(myDealer, '#dealerBalance'); //Refresh table amount
         }
     }
@@ -547,6 +623,152 @@ $(() => {
         $('#dealerBalance').text(Helper.formatAmount(myDealer.currentBalance));
     }
 
+    const calculateWinner = (myDealer, myPlayer) => {
+        console.log(myGame);
+        let dealerCards = myGame.substituteValue(myGame.dealerCards);
+        let playerCards = myGame.substituteValue(myGame.playerCards);
+        let communityCards = myGame.substituteValue(myGame.communityCards);
+        let winnerFound = 0;
+
+        //Combinining 5 community cards + 2 player/dealer cards to form a new array
+        for (let i = 0; i < communityCards.length; i++){
+            dealerCards.push(communityCards[i]);
+            playerCards.push(communityCards[i]);
+        }
+
+        //Step 10/10
+        // while(winnerFound = 0){
+
+        // }
+        Helper.printMsg(checkPair(dealerCards, playerCards));
+        console.log(checkHighCard(dealerCards, playerCards));
+        // //Check for Royal Flush
+        // for (let i = 0; i < dealerCards.length; i++){
+        //     console.log(dealerCards[i].value);
+        //     console.log(dealerCards[i].suit);
+        // }
+    }
+
+    const checkHighCard = (dealerCards, playerCards) => {
+        let dealerHighestCard = myGame.sortByLargestValue(dealerCards);
+        let playerHighestCard = myGame.sortByLargestValue(playerCards);
+
+        if (dealerHighestCard[0].value > playerHighestCard[0].value)
+            return "Dealer Won! Highest card is: " + myGame.returnLargestValue(dealerCards);
+        else if (dealerHighestCard[0].value === playerHighestCard[0].value)
+            return "It's a draw! Highest card is: " + myGame.returnLargestValue(dealerCards);
+        else if (playerHighestCard[0].value === dealerHighestCard[0].value)
+            return "Player Won! Highest card is: " + myGame.returnLargestValue(playerCards);
+        else
+            return false; //No Winner Found. This will never happen.
+    }
+
+    const checkPair = (dealerCards, playerCards) => {
+        let dealerByHighestCard = myGame.sortByLargestValue(dealerCards);
+        let playerByHighestCard = myGame.sortByLargestValue(playerCards);
+        let dealerPair = [];
+        let playerPair = [];
+
+        //Only obtain the 1st 2 pairs dealerPair.
+        for (let i = 1; i < dealerByHighestCard.length; i++){
+            if(dealerByHighestCard[i].value === dealerByHighestCard[i-1].value && dealerPair.length <= 4){
+                let tempPairArray = [];
+                tempPairArray.push(dealerByHighestCard[i]);
+                tempPairArray.push(dealerByHighestCard[i-1]);
+                dealerPair.push(tempPairArray); //Push the 1st pair card into the player array
+                i++ //Skip the card with the pair that was pushed into dealer array
+            }
+        }
+
+        //Only obtain the 1st 2 pairs playerPair.
+        for (let i = 1; i < playerByHighestCard.length; i++){
+            if(playerByHighestCard[i].value === playerByHighestCard[i-1].value && playerPair.length <= 2){
+                let tempPairArray = [];
+                tempPairArray.push(playerByHighestCard[i]);
+                tempPairArray.push(playerByHighestCard[i-1]);
+                playerPair.push(tempPairArray); //Push the 1st pair card into the player array
+                i++ //Skip the card with the pair that was pushed into dealer array
+            }
+        }
+
+        //Check dealer or player has the highest number of pair count
+        if (dealerPair.length === playerPair.length && dealerPair.length === 0){
+            Helper.printMsg("No pair found!"); //No Pair for both dealer and player
+            return false;
+        }
+        else if(dealerPair.length > playerPair.length){
+            return "Dealer Won with " + dealerPair.length + " pair(s)!";
+        }
+        else if (dealerPair.length > dealerPair.length){
+            return "Player Won with " + playerPair.length + " pair(s)!";
+        }
+        //If the number of pairs are the same. Then check the highest pair value. Both having 1 pair
+        else if (dealerPair.length === playerPair.length && dealerPair.length === 1) {
+            if(playerPair[0][0].value > dealerPair[0][0].value){ //Check 1st Card of the Pair
+                return "Player Won with " + playerPair[0].value + " pair!";
+            }
+            else if(dealerPair[0][0].value > playerPair[0][0].value){ //Check 1st Card of the Pair
+                return "Dealer Won with " + dealerPair[0][0].value + " pair!";
+            }
+            else
+                return "Dealer draw with player. Both having 1 pair with " + dealerPair[0][0].value + " value!";
+        }
+        else if (dealerPair.length === playerPair.length && dealerPair.length === 2){
+            if(playerPair[0][0].value > dealerPair[0][0].value){ //Check 1st pair
+                return "Player Won with " + playerPair[0].value + " pair!";
+            }
+            else if (playerPair[0][0].value === dealerPair[0][0].value){ //1st pair having the same value
+                if (playerPair[1][0].value > dealerPair[1][0].value){ //Check 2nd pair
+                    return "Player Won with 2 pairs. " + playerPair[0][0].value + " pair, and " + playerPair[0][1].value + " pair!";
+                }
+                else if (dealerPair[1][0].value > playerPair[1][0].value){ //Check 2nd pair
+                    return "Dealer Won with 2 pairs. " + dealerPair[0][0].value + " pair, and " + dealerPair[0][1].value + " pair!";
+                }
+                else {
+                    return "Dealer draw with player. Both having 2 pairs. " + dealerPair[0][0].value + " pair, and " + dealerPair[0][1].value + " pair!";
+                }
+            }
+        }
+        //To-DO: Implement draw with 2 pairs each
+    }
+
+    const checkRoyalFlush = () => {
+        let tempArray =
+            [
+                {
+                    suit: "DIAMONDS",
+                    value: "JACK"
+                },
+                {
+                    suit: "SPADES",
+                    value: "QUEEN"
+                },
+                {
+                    suit: "DIAMONDS",
+                    value: "5"
+                },
+                {
+                    suit: "SPADES",
+                    value: "3"
+                },
+                {
+                    suit: "SPADES",
+                    value: "10"
+                },
+                {
+                    suit: "SPADES",
+                    value: "ACE"
+                },
+                {
+                    suit: "CLUBS",
+                    value: "KING"
+                }]
+
+        tempArray = myGame.substituteValue(tempArray);
+        console.log(tempArray);
+        //console.log(checkHighCard(tempArray));
+    }
+
     //EVENT LISTENER STARTS HERE
     $('#startBtn').on('click', (ev) => {
         ev.preventDefault();
@@ -561,6 +783,11 @@ $(() => {
     $('#confirmAmtButton').on('click', (ev) => {
         ev.preventDefault();
         setMinAmount();
+    })
+
+    $('#calcWinnerBtn').on('click', (ev) => {
+        ev.preventDefault();
+        calculateWinner();
     })
 
     $('.chip').on('click',(ev) => {
