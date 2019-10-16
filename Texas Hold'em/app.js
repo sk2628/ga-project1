@@ -278,9 +278,9 @@ $(() => {
             $('#community5').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[4].image + ')').addClass('communityCards').addClass('community5');
         }
         else if (round === 5){
-            $('#dealer1').removeClass('card-face-down-rotated').css('background-image','url(' + myGame.dealerCards[0].image + ')');
+            $('#dealer1').removeClass('card-face-down-rotated-dealer1').css('background-image','url(' + myGame.dealerCards[0].image + ')');
             // $('#dealer2').css('background-image','url(' + myGame.dealerCards[1].image + ')');
-            $('#dealer2').removeClass('card-face-down-rotated').css('background-image','url(' + myGame.dealerCards[1].image + ')');
+            $('#dealer2').removeClass('card-face-down-rotated-dealer2').css('background-image','url(' + myGame.dealerCards[1].image + ')');
         }
     }
 
@@ -311,10 +311,10 @@ $(() => {
         //Hide Dealer and Community Card by default
 
         // $('#dealer1').css('background-image','url(' + myGame.dealerCards[0].image + ')');
-        $('#dealer1').addClass('card-face-down-rotated');
+        $('#dealer1').addClass('card-face-down-rotated-dealer1');
         $('#player1').css('background-image','url(' + myGame.playerCards[0].image + ')');
         // $('#dealer2').css('background-image','url(' + myGame.dealerCards[1].image + ')');
-        $('#dealer2').addClass('card-face-down-rotated');
+        $('#dealer2').addClass('card-face-down-rotated-dealer2');
         $('#player2').css('background-image','url(' + myGame.playerCards[1].image + ')');
 
         //Display community cards
@@ -591,8 +591,8 @@ $(() => {
             populatePlayerBet(Helper.formatAmount(currentRoundPlayerAccBet));
             populatePlayerBalance();
             populateTableBalance();
-            Helper.printMsg("Player added... " + currentRoundPlayerAccBet);
-            Helper.printMsg("Player balance is now... " + myPlayer.currentBalance);
+            Helper.printMsg("Player adding... " + currentRoundPlayerAccBet);
+            // Helper.printMsg("Player balance is now... " + myPlayer.currentBalance);
             //populateTableBalance(myPlayer, '#playerBalance');
         }
     }

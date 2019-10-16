@@ -15,28 +15,37 @@
 
 <!-- <body background="Background.jpg"> -->
 <body>
-    <div class = "title">
-        <h1>Texas Hold'em</h1>
-    </div>
-
-    <div class="input-group mb-3">
+<!--     <div class="input-group mb-3">
         <div class="input-group-append">
             <input type="text" id="minAmount" class="minAmount" placeholder="Min Amount" aria-label="Min Amount" aria-describedby="button-addon2">
             <button class="btn btn-outline-secondary" type="button" id="confirmAmtButton">Confirm</button>
         </div>
+    </div> -->
+
+    <nav class="navbar navbar-dark bg-dark sticky-top">
+        <div class="input-group mb-3">
+            <div class="input-group-append">
+                <input type="text" id="minAmount" class="minAmount" placeholder="Min Amount" aria-label="Min Amount" aria-describedby="button-addon2">
+                <button class="btn btn-outline-secondary" type="button" id="confirmAmtButton">Confirm</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class = "title">
+        <h1>Texas Hold'em</h1>
     </div>
 
     <div class="container-fluid">
         <div id="dealerLabel" class="dealarLabel">
-            <img id="dealerBigBlind" src="../resources/bigblind2.png" class="bigBlind hide"/>
             <div id="dealerBalance" class="badge badge-pill badge-info"></div>
             <div>
                 <span>Dealer
                 <img id="dealerTurn" class="turn hide" src="../resources/cleaned/green.png"/></span>
             </div>
         </div>
-        <div id="dealer1" class="dealer dealer1"></div>
-        <div id="dealer2" class="dealer dealer2"></div>
+        <img id="dealerBigBlind" src="../resources/bigblind2.png" class="bigBlind-dealer"/>
+        <div id="dealer1" class="dealer1"></div>
+        <div id="dealer2" class="dealer2"></div>
         <div id="dealerBet" class="dealerBet">
             <div id="dealerBetLabel" class="badge badge-dark betLabel"></div>
         </div>
