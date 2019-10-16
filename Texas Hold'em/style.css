@@ -7,7 +7,7 @@ body{
 	/*color: white;*/
 }
 
-.container{
+.container-fluid{
 	background-image: url('../resources/table4.svg');
 	background-repeat: no-repeat;
 	background-position: center;
@@ -16,7 +16,10 @@ body{
 	grid-template-rows: 40% 10% 8.5% 0.5% 8% 41%;
 	grid-template-columns: 8% 23% 7.5% 4.5% 3% 0.5% 3.5% 3.5% 3.5% 4% 7.5% 7.5% 16% 8%; /*94.5*/
 	/*grid-template-columns: 8% 23% 38% 23% 8%;*/
-	min-height: 750px;
+	min-height: 835px;
+	max-width: 1450px;
+	left-padding: 40px;
+	right-padding: 40px;
 }
 
 /*.container > div {
