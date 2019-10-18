@@ -219,7 +219,7 @@ class Helper {
     static readOutLoud = (message, activated) => {
         if(activated){
             let apiKey = "4e30f4ad61ac45bf9bb52143f638d1f7";
-            let contentLanguage = "en-us";
+            let contentLanguage = "en-gb";
 
             $('#textToSpeech')
                 .removeAttr('src')
@@ -352,12 +352,19 @@ $(() => {
     }
 
     const defaultButton = () => {
+        console.log("defaultButton clicked");
         disabledButton($('#betCallBtn'));
         disabledButton($('#checkBtn'));
         disabledButton($('#foldBtn'));
         disabledButton($('#allInBtn'));
         disabledButton($('#newRoundBtn'));
         //disabledButton($('#startBtn'));
+    }
+
+    const checkButtonControl = () => {
+         if(currentRound >= 2){ //Enabling check button from round 2 onwards
+            enabledButton($('#checkBtn'));
+        }
     }
 
     const startGameDefaultButton = () => {
@@ -372,6 +379,7 @@ $(() => {
     const newRoundDefaultButton = () => {
         disabledButton($('#betCallBtn'));
         enabledButton($('#newRoundBtn'));
+        disabledButton($('#checkBtn'));
     }
 
     const populateTableBalance = () => {
@@ -414,7 +422,7 @@ $(() => {
     }
 
     const setMinAmount = () => {
-        if (typeof mygame != "undefined") {
+        if (typeof myGame != "undefined") {
             myGame.minimumAmount = $('#minAmount').val();
         }
         else {
@@ -473,10 +481,25 @@ $(() => {
         }
     }
 
+    const check = (round) => {
+        setAndRotateTurn(myDealer, myPlayer);
+
+        currentRound++;
+        setAndRotateTurn(myDealer, myPlayer);
+
+        Helper.printMsg("Round " + round + " completed. Place your bet!");
+        drawAndRevealCard(currentRound);
+
+        if (currentRound === 5){
+            console.log(myGame.dealerCards);
+            console.log(myGame.playerCards);
+            calculateWinner();
+            newRoundDefaultButton();
+        }
+    }
+
     const betCall = (round) => {
         //PreFlop Round, move the bets to the table, and take turn
-        Helper.printMsg("Dealer turn? " + myDealer.isTurn);
-        Helper.printMsg("Player turn? " + myPlayer.isTurn);
         let dealerMatchAmount = 0;
 
         if(round == 1){
@@ -517,7 +540,7 @@ $(() => {
             //Update Table after player
             setTableBalance(myGame.currentRoundPlayerAccBet);
             Helper.printMsg("Moved " + myGame.currentRoundPlayerAccBet + " from Player to Table.");
-            Helper.readOutLoud("Player bet " + Helper.formatAmount(myGame.currentRoundPlayerAccBet) + ". Dealer match with " + Helper.formatAmount(dealerMatchAmount), mySettings.textToSpeech);
+            Helper.readOutLoud("Player bet " + Helper.formatAmount(myGame.currentRoundPlayerAccBet), mySettings.textToSpeech);
 
             myGame.currentRoundPlayerAccBet = 0; //Reset current bet amount to 0
             populatePlayerBet(myGame.currentRoundPlayerAccBet);
@@ -532,6 +555,7 @@ $(() => {
             Helper.printMsg("Dealer match with " + Helper.formatAmount(dealerMatchAmount));
 
             currentRound++;
+            checkButtonControl();
             setAndRotateTurn(myDealer, myPlayer);
 
             Helper.printMsg("Round " + round + " completed. Place your bet!");
@@ -765,18 +789,15 @@ $(() => {
             localPlayerCards.push(localCommunityCards[i]);
         }
 
-        //Step 10/10
+        //Step through the checks 10/10
         if (myGame.winnerFound == false){
             winnerMessage = checkPair(localDealerCards, localPlayerCards);
-            console.log(myPlayer.currentBalance);
-            console.log(myDealer.currentBalance);
         }
         if (myGame.winnerFound == false){
             winnerMessage = checkHighCard(localDealerCards, localPlayerCards);
-            console.log(myPlayer.currentBalance);
-            console.log(myDealer.currentBalance);
         }
 
+        //A winner is found
         if (winnerMessage != ""){
             Helper.printWinningMsg(winnerMessage);
             Helper.readOutLoud(winnerMessage, mySettings.textToSpeech);
@@ -785,12 +806,9 @@ $(() => {
             populatePlayerBalance();
             populateDealerBalance();
         }
-        else { //To-DO: Split table amount
-            Helper.printWinningMsg("No winner found. Table amount will be split.");
-            Helper.readOutLoud("No winner found. Table amount will be split.", mySettings.textToSpeech);
-        }
     }
 
+    //Check winning combination for high card
     const checkHighCard = (dealerCards, playerCards) => {
         let dealerHighestCard = dealerCards;
         let playerHighestCard = playerCards;
@@ -822,6 +840,7 @@ $(() => {
         }
     }
 
+    //Check winning combination for single pair and double pair
     const checkPair = (dealerCards, playerCards) => {
         //Force empty the array to support for multiple round
         let localDealerHighestCard = myGame.sortByLargestValue(dealerCards);
@@ -852,26 +871,21 @@ $(() => {
             }
         }
 
-        console.log(localDealerPair);
-        console.log(localPlayerPair);
-
-        //if the number of pair is 0
+        //if there is no pair
         if (localDealerPair.length === localPlayerPair.length && localDealerPair.length === 0){
-            myDealer.updateBalance(tableAmount * 0.5);
-            myPlayer.updateBalance(tableAmount * 0.5);
             return "No Pair found!"; //No Pair for both dealer and player
         }
         //If dealer has more pair than player
         else if(localDealerPair.length > localPlayerPair.length){
             myGame.winnerFound = true;
             myDealer.updateBalance(tableAmount);
-            return "Dealer won with " + localDealerPair.length + " pair(s)! ";
+            return "Dealer won with " + localDealerPair.length + " pair! ";
         }
         //If player has more pair than dealer
         else if (localPlayerPair.length > localDealerPair.length){
             myGame.winnerFound = true;
             myPlayer.updateBalance(tableAmount);
-            return "Player won with " + localPlayerPair.length + " pair(s)! ";
+            return "Player won with " + localPlayerPair.length + " pair! ";
         }
 
         //If the number of pairs are the same. Then check the highest pair value. Both having 1 pair
@@ -887,8 +901,6 @@ $(() => {
                 return "Dealer Won with a " + localDealerPair[0][0].value + " pair!";
             }
             else{
-                myDealer.updateBalance(tableAmount * 0.5);
-                myPlayer.updateBalance(tableAmount * 0.5);
                 return "Dealer draw with player. Both having 1 pair with " + localDealerPair[0][0].value + " value!";
             }
         }
@@ -917,8 +929,6 @@ $(() => {
                 }
                 //if both player and dealer having 2 highest pair with both same value
                 else {
-                    myDealer.updateBalance(tableAmount * 0.5);
-                    myPlayer.updateBalance(tableAmount * 0.5);
                     return "Dealer draw with player. Both having 2 pairs. " + localDealerPair[0][0].value + " pair, and " + localDealerPair[1][0].value + " pair!";
                 }
             }
@@ -980,6 +990,11 @@ $(() => {
         betCall(currentRound); //Process BetCall Function for current player in play
     })
 
+    $('#checkBtn').on('click', (ev) => {
+        ev.preventDefault();
+        check(currentRound); //Process BetCall Function for current player in play
+    })
+
     $('#newRoundBtn').on('click', (ev) => {
         ev.preventDefault();
         currentRound = 0;
@@ -993,15 +1008,12 @@ $(() => {
         setMinAmount();
     })
 
-    $('#calcWinnerBtn').on('click', (ev) => {
-        ev.preventDefault();
-    })
-
     $('.chipsBet').on('click',(ev) => {
-        let clickedValue = ev.currentTarget.id;
-        ev.preventDefault();
-
-        setBetAmount(clickedValue, currentRound);
+        if (typeof myGame != "undefined") {
+            let clickedValue = ev.currentTarget.id;
+            ev.preventDefault();
+            setBetAmount(clickedValue, currentRound);
+        }
     })
 
     //TO-DO: DRY CODE: CONVERT INTO SINGLE FUNCTION

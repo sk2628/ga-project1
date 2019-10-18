@@ -162,6 +162,14 @@ h1{
 	width: 80px;
 }
 
+.chipImageArea{
+	grid-column-start: 13;
+	grid-column-end: 14;
+	grid-row-start: 3;
+	grid-row-end: 5;
+	padding-left: 100px;
+}
+
 .blueChipArea{
 	grid-column-start: 6;
 	grid-column-end: 7;

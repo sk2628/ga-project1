@@ -24,7 +24,6 @@
     </div> -->
     <audio id="textToSpeech" class="textToSpeech">
         <source id="textToSpeechSource"
-                src="http://api.voicerss.org/?key=4e30f4ad61ac45bf9bb52143f638d1f7&hl=zh-cn&src=Dealer starts the bet"
                 type="audio/mp3">
 
     </audio>
@@ -68,12 +67,14 @@
             </div>
             <div id="status" class="status">
             </div>
+            <br/><br/><div id="tableBetLabel" class="badge badge-dark betLabel"></div>
+        </div>
 
+        <div id="chipImageArea" class="chipImageArea">
             <img class="chipImg blueChip hide" src="../resources/cleaned/blue-chip-25-transparent.png"/>
             <img class="chipImg greenChip hide" src="../resources/cleaned/green-chip-50-transparent.png"/>
             <img class="chipImg blackChip hide" src="../resources/cleaned/black-chip-100-transparent.png"/>
             <img class="chipImg redChip hide" src="../resources/cleaned/red-chip-200-transparent.png"/>
-            <br/><br/><div id="tableBetLabel" class="badge badge-dark betLabel"></div>
         </div>
 
         <div id="blueChipArea" class="chipsBet blueChipArea"></div>
@@ -102,7 +103,6 @@
             <button id="checkBtn" type="button" class="btn btn-primary">Check</button>
             <button id="foldBtn" type="button" class="btn btn-primary">Fold</button>
             <button id="allInBtn" type="button" class="btn btn-primary">All-In</button>
-            <button id="calcWinnerBtn" type="button" class="btn btn-primary">Calculate Winner</button>
         </div>
     </div>
 </body>
