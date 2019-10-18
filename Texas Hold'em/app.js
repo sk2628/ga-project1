@@ -196,6 +196,15 @@ class Helper {
         $('<div>').text(message).prependTo('#status');
         console.log(message);
     }
+
+    static readOutLoud = (message) => {
+        let apiKey = "4e30f4ad61ac45bf9bb52143f638d1f7";
+        let contentLanguage = "en-us";
+
+        $('#textToSpeech')
+            .removeAttr('src')
+            .attr('src','http://api.voicerss.org/?key=' + apiKey + '&hl=' + contentLanguage + '&src=' + message)[0].play();
+    }
 }
 
 $(() => {
@@ -208,6 +217,7 @@ $(() => {
     let currentRoundPlayerAccBet = 0;
 
     const startGame = () => {
+        Helper.readOutLoud("Game Started. Good Luck!");
         myGame = new Game();
         myGame.playerCount = 2;
         myGame.deckCount = 1;
@@ -265,37 +275,71 @@ $(() => {
         );
     }
 
-    const drawAndRevealCard = (round) => {
+    function drawAndRevealCard (round) {
         if (round === 2){ //Flop Stage
-            $('#community1').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[0].image + ')').addClass('communityCards').addClass('community1');
-            $('#community2').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[1].image + ')').addClass('communityCards').addClass('community2');
-            $('#community3').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[2].image + ')').addClass('communityCards').addClass('community3');
+            console.log("start");
+            setTimeout(drawAndRevealCardSingle, 200, "c1");
+            setTimeout(drawAndRevealCardSingle, 1200, "c2");
+            setTimeout(drawAndRevealCardSingle, 2200, "c3");
         }
         else if(round === 3){
-            $('#community4').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[3].image + ')').addClass('communityCards').addClass('community4');
+            setTimeout(drawAndRevealCardSingle, 200, "c4");
         }
         else if(round === 4){
-            $('#community5').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[4].image + ')').addClass('communityCards').addClass('community5');
+            setTimeout(drawAndRevealCardSingle, 200, "c5");
         }
         else if (round === 5){
-            $('#dealer1').removeClass('card-face-down-rotated-dealer1').css('background-image','url(' + myGame.dealerCards[0].image + ')');
-            // $('#dealer2').css('background-image','url(' + myGame.dealerCards[1].image + ')');
-            $('#dealer2').removeClass('card-face-down-rotated-dealer2').css('background-image','url(' + myGame.dealerCards[1].image + ')');
+            setTimeout(drawAndRevealCardSingle, 200, "d1");
+            setTimeout(drawAndRevealCardSingle, 1200, "d2");
         }
+    }
+
+    function drawAndRevealCardSingle (card) {
+
+        switch(card){
+            case "c1":
+                $('#community1').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[0].image + ')').addClass('communityCards').addClass('community1').addClass('flip-in-ver-left');
+                break;
+            case "c2":
+                $('#community2').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[1].image + ')').addClass('communityCards').addClass('community2').addClass('flip-in-ver-left');
+                break;
+            case "c3":
+                $('#community3').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[2].image + ')').addClass('communityCards').addClass('community3').addClass('flip-in-ver-left');
+                break;
+            case "c4":
+                $('#community4').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[3].image + ')').addClass('communityCards').addClass('community4').addClass('flip-in-ver-left');
+                break;
+            case "c5":
+                $('#community5').removeClass('community-card-face-down').css('background-image','url(' + myGame.communityCards[4].image + ')').addClass('communityCards').addClass('community5').addClass('flip-in-ver-left');
+                break;
+            case "d1":
+                $('#dealer1').removeClass('card-face-down-rotated-dealer1').css('background-image','url(' + myGame.dealerCards[0].image + ')');
+                break;
+            case "d2":
+                $('#dealer2').removeClass('card-face-down-rotated-dealer2').css('background-image','url(' + myGame.dealerCards[1].image + ')');
+                break;
+            default:
+                break;
+        }
+    }
+
+    const defaultButton = () => {
+        disabledButton($('#betCallBtn'));
+        disabledButton($('#checkBtn'));
+        disabledButton($('#foldBtn'));
+        disabledButton($('#allInBtn'));
+        disabledButton($('#nextRoundBtn'));
+        //disabledButton($('#startBtn'));
     }
 
     const startGameDefaultButton = () => {
-        //disabledButton($('#betCallBtn'));
+        enabledButton($('#betCallBtn'));
         disabledButton($('#checkBtn'));
-        disabledButton($('#raiseBtn'));
         disabledButton($('#foldBtn'));
         disabledButton($('#allInBtn'));
         disabledButton($('#startBtn'));
+        disabledButton($('#nextRoundBtn'));
     }
-
-    // const updateBalance = (dealerOrPlayer, amountToUpdate) => {
-    //     dealerOrPlayer.currentBalance += amountToUpdate;
-    // }
 
     const populateTableBalance = () => {
         $('#tableBetLabel').empty();
@@ -405,7 +449,17 @@ $(() => {
             dealerMatchAmount = currentRoundPlayerAccBet - myDealer.riverHoldingAmount;
         }
 
-        if(dealerMatchAmount >= 0){ //Bet match the minimum placed by dealer. proceed to the next stage
+        if (dealerMatchAmount < 0){
+            Helper.printMsg("Please place an additional: " +  Helper.formatAmount(Math.abs(dealerMatchAmount)) + " or more");
+            Helper.readOutLoud("Please place an additional: " +  Helper.formatAmount(Math.abs(dealerMatchAmount)) + " or more");
+        }
+
+        else if (dealerMatchAmount === 0 && round > 1){
+            Helper.printMsg("Place some chip to bet!");
+            Helper.readOutLoud("Place some chip to bet!");
+        }
+
+        else if(dealerMatchAmount >= 0){ //Bet match the minimum placed by dealer. proceed to the next stage
 
             //Player Handling - Moved Confirmed Amount and reset preflop amount
             //.preFlopAmount = currentRoundPlayerAccBet;
@@ -413,6 +467,7 @@ $(() => {
             //Update Table after player
             setTableBalance(currentRoundPlayerAccBet);
             Helper.printMsg("Moved " + currentRoundPlayerAccBet + " from Player to Table.");
+            Helper.readOutLoud("Player bet " + Helper.formatAmount(currentRoundPlayerAccBet) + ". Dealer match with " + Helper.formatAmount(dealerMatchAmount));
 
             currentRoundPlayerAccBet = 0; //Reset current bet amount to 0
             populatePlayerBet(currentRoundPlayerAccBet);
@@ -424,7 +479,8 @@ $(() => {
             //if player raise amount higher than the preflop amount, dealer will automatically match it
             setAndRotateTurn(myDealer, myPlayer);
             updateDealerBet(dealerMatchAmount, currentRound);
-            Helper.printMsg("Dealer bet: " + Helper.formatAmount(dealerMatchAmount));
+            Helper.printMsg("Dealer match with " + Helper.formatAmount(dealerMatchAmount));
+
 
             currentRound++;
             setAndRotateTurn(myDealer, myPlayer);
@@ -435,12 +491,15 @@ $(() => {
             if (currentRound === 5){
                 console.log("TO-DO: Determine Winner...");
                 calculateWinner(myDealer, myPlayer);
-                disabledButton($('#betCallBtn'));
+                startNewRound();
             }
         }
-        else{
-            alert("Please bet an additional: " + Helper.formatAmount(Math.abs(dealerMatchAmount)));
-        }
+    }
+
+    const startNewRound = () => {
+        disabledButton($('#betCallBtn'));
+        enabledButton($('#nextRoundBtn'));
+        currentRound = 0; //Reset Current Round
     }
 
     //DOM MANIPULATIONS
@@ -585,13 +644,13 @@ $(() => {
             populateTableBalance();
         }
         else {  //All Rounds
-            Helper.printMsg("Player adding... " + tempAmount);
+            Helper.printMsg("Player adding... " + Helper.formatAmount(tempAmount));
             //myPlayer.preFlopHoldingAmount += tempAmount;
             myPlayer.updateBalance(-(tempAmount));
             populatePlayerBet(Helper.formatAmount(currentRoundPlayerAccBet));
             populatePlayerBalance();
             populateTableBalance();
-            Helper.printMsg("Player adding... " + currentRoundPlayerAccBet);
+            Helper.printMsg("Player adding... " + Helper.formatAmount(currentRoundPlayerAccBet));
             // Helper.printMsg("Player balance is now... " + myPlayer.currentBalance);
             //populateTableBalance(myPlayer, '#playerBalance');
         }
@@ -713,6 +772,7 @@ $(() => {
             else
                 return "Dealer draw with player. Both having 1 pair with " + dealerPair[0][0].value + " value!";
         }
+
         else if (dealerPair.length === playerPair.length && dealerPair.length === 2){
             if(playerPair[0][0].value > dealerPair[0][0].value){ //Check 1st pair
                 return "Player Won with " + playerPair[0].value + " pair!";
@@ -787,7 +847,7 @@ $(() => {
 
     $('#calcWinnerBtn').on('click', (ev) => {
         ev.preventDefault();
-        calculateWinner();
+        Helper.readOutLoud("");
     })
 
     $('.chip').on('click',(ev) => {
@@ -841,4 +901,6 @@ $(() => {
         ev.preventDefault();
         $('.redChip').toggleClass('hide');
     })
+
+    defaultButton(); //Disabled all button by default
 })

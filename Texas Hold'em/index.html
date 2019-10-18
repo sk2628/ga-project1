@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="style.css" type="text/css"/>
+    <script src='jquery.voicerss-tts.min.js'></script>
     <script src="app.js"></script>
 </head>
 
@@ -21,6 +22,12 @@
             <button class="btn btn-outline-secondary" type="button" id="confirmAmtButton">Confirm</button>
         </div>
     </div> -->
+    <audio id="textToSpeech" class="textToSpeech">
+        <source id="textToSpeechSource"
+                src="http://api.voicerss.org/?key=4e30f4ad61ac45bf9bb52143f638d1f7&hl=zh-cn&src=Dealer starts the bet"
+                type="audio/mp3">
+
+    </audio>
 
     <nav class="navbar navbar-dark bg-dark sticky-top">
         <div class="input-group mb-3">
@@ -43,7 +50,7 @@
                 <img id="dealerTurn" class="turn hide" src="../resources/cleaned/green.png"/></span>
             </div>
         </div>
-        <img id="dealerBigBlind" src="../resources/bigblind2.png" class="bigBlind-dealer"/>
+        <img id="dealerBigBlind" src="../resources/bigblind2.png" class="bigBlind-dealer hide"/>
         <div id="dealer1" class="dealer1"></div>
         <div id="dealer2" class="dealer2"></div>
         <div id="dealerBet" class="dealerBet">
@@ -88,9 +95,9 @@
 
         <div class="startButtonArea">
             <button id="startBtn" type="button" class="btn btn-primary">New Game</button>
+            <button id="nextRoundBtn" type="button" class="btn btn-primary">Next Round</button>
             <button id="betCallBtn" type="button" class="btn btn-primary">Bet/Call</button>
             <button id="checkBtn" type="button" class="btn btn-primary">Check</button>
-            <button id="raiseBtn" type="button" class="btn btn-primary">Raise</button>
             <button id="foldBtn" type="button" class="btn btn-primary">Fold</button>
             <button id="allInBtn" type="button" class="btn btn-primary">All-In</button>
             <button id="calcWinnerBtn" type="button" class="btn btn-primary">Calculate Winner</button>
