@@ -54,7 +54,15 @@ class Player {
     }
 
     updateBalance(amount){
+        console.log("Updating Balance..." + amount);
         this.currentBalance += parseInt(amount);
+        console.log("Updated Balance..." + this.currentBalance);
+    }
+}
+
+class Settings {
+    constructor (textToSpeech = false){
+        this.textToSpeech = textToSpeech;
     }
 }
 
@@ -200,13 +208,23 @@ class Helper {
         console.log(message);
     }
 
-    static readOutLoud = (message) => {
-        let apiKey = "4e30f4ad61ac45bf9bb52143f638d1f7";
-        let contentLanguage = "en-us";
+    static printWinningMsg = (message, clearMsg) => {
+       if(clearMsg == true){
+          $('#winningStatus').children().remove();
+        }
+        $('<div>').text(message).prependTo('#winningStatus').addClass('tracking-in-contract-bck');
+        console.log(message);
+    }
 
-        $('#textToSpeech')
-            .removeAttr('src')
-            .attr('src','http://api.voicerss.org/?key=' + apiKey + '&hl=' + contentLanguage + '&src=' + message)[0].play();
+    static readOutLoud = (message, activated) => {
+        if(activated){
+            let apiKey = "4e30f4ad61ac45bf9bb52143f638d1f7";
+            let contentLanguage = "en-us";
+
+            $('#textToSpeech')
+                .removeAttr('src')
+                .attr('src','http://api.voicerss.org/?key=' + apiKey + '&r=1' + '&hl=' + contentLanguage + '&src=' + message)[0].play();
+        }
     }
 }
 
@@ -218,8 +236,11 @@ $(() => {
     let tableAmount = 0;
     let currentRound = 0;
 
+    let mySettings = new Settings();
+    mySettings.textToSpeech = false;
+
     const startGame = () => {
-        Helper.readOutLoud("Game Started. Good Luck!");
+        Helper.readOutLoud("Game Started. Good Luck!", mySettings.textToSpeech);
         myGame = new Game();
         myGame.playerCount = 2;
         myGame.deckCount = 4;
@@ -233,6 +254,7 @@ $(() => {
     }
 
     const startNewRound = () => {
+        Helper.printWinningMsg("",true);
         createNewDeck();
         startGameDefaultButton();
         populateSmallBigBlind();
@@ -385,7 +407,6 @@ $(() => {
     }
 
     const rotateBlind = () => {
-        //To-DO: To cALL THIS FUNCTion upon completion of the game
         myDealer.isBigBlind = !myDealer.isBigBlind; //take turn to be big blind
         myDealer.isSmallBlind = !myDealer.isSmallBlind; //take turn to be big blind
         myPlayer.isBigBlind = !myPlayer.isBigBlind; //take turn to be small blind
@@ -443,12 +464,13 @@ $(() => {
 
         //Do not allow user to go lower than available balance
         if(amount > myPlayer.currentBalance){
-            Helper.printMsg("You do not have " + amount + ". Current balance is " + myPlayer.currentBalance);
-            Helper.readOutLoud("You do not have " + amount + ". Current balance is " + myPlayer.currentBalance);
+            Helper.printMsg("You do not have " + Helper.formatAmount(amount) + ". Current balance is " + Helper.formatAmount(myPlayer.currentBalance));
+            Helper.readOutLoud("You do not have " + amount + ". Current balance is " + myPlayer.currentBalance, mySettings.textToSpeech);
             return;
         }
-
-        updatePlayerBet(amount, round);
+        else{
+            updatePlayerBet(amount, round);
+        }
     }
 
     const betCall = (round) => {
@@ -474,18 +496,18 @@ $(() => {
         if(dealerMatchAmount > myDealer.currentBalance){
             dealerMatchAmount = myDealer.currentBalance;
             Helper.printMsg("Dealer All-In!");
-            Helper.readOutLoud("Dealer All-In!");
+            Helper.readOutLoud("Dealer All-In!", mySettings.textToSpeech);
         }
 
         if (dealerMatchAmount < 0){
             Helper.printMsg("Please place an additional: " +  Helper.formatAmount(Math.abs(dealerMatchAmount)) + " or more");
-            Helper.readOutLoud("Please place an additional: " +  Helper.formatAmount(Math.abs(dealerMatchAmount)) + " or more");
+            Helper.readOutLoud("Please place an additional: " +  Helper.formatAmount(Math.abs(dealerMatchAmount)) + " or more", mySettings.textToSpeech);
         }
 
         //No chip was placed. For Pre-flop (Round 1). allow to match against the big blind amount
         else if (dealerMatchAmount === 0 && round > 1){
             Helper.printMsg("Place some chip to bet!");
-            Helper.readOutLoud("Place some chip to bet!");
+            Helper.readOutLoud("Place some chip to bet!", mySettings.textToSpeech);
         }
 
         else if(dealerMatchAmount >= 0){ //Bet match the minimum placed by dealer. proceed to the next stage
@@ -495,7 +517,7 @@ $(() => {
             //Update Table after player
             setTableBalance(myGame.currentRoundPlayerAccBet);
             Helper.printMsg("Moved " + myGame.currentRoundPlayerAccBet + " from Player to Table.");
-            Helper.readOutLoud("Player bet " + Helper.formatAmount(myGame.currentRoundPlayerAccBet) + ". Dealer match with " + Helper.formatAmount(dealerMatchAmount));
+            Helper.readOutLoud("Player bet " + Helper.formatAmount(myGame.currentRoundPlayerAccBet) + ". Dealer match with " + Helper.formatAmount(dealerMatchAmount), mySettings.textToSpeech);
 
             myGame.currentRoundPlayerAccBet = 0; //Reset current bet amount to 0
             populatePlayerBet(myGame.currentRoundPlayerAccBet);
@@ -512,11 +534,10 @@ $(() => {
             currentRound++;
             setAndRotateTurn(myDealer, myPlayer);
 
-            Helper.printMsg("Round " + round + " completed");
+            Helper.printMsg("Round " + round + " completed. Place your bet!");
             drawAndRevealCard(currentRound);
 
             if (currentRound === 5){
-                console.log("TO-DO: Determine Winner...");
                 console.log(myGame.dealerCards);
                 console.log(myGame.playerCards);
                 calculateWinner();
@@ -607,12 +628,6 @@ $(() => {
                 }
             }
         }
-        console.log("Player Cards");
-        console.log(myGame.playerCards);
-        console.log("Dealer Cards");
-        console.log(myGame.dealerCards);
-        console.log("Community Cards");
-        console.log(myGame.communityCards);
         //Display the cards on table
         displayPreFlopCards();
     }
@@ -631,7 +646,9 @@ $(() => {
     //Pre-Flop (Round 1)
     const populateSmallBigBlind = () => {
         let bigBlindAmount = myGame.minimumAmount;
+        let placedAmount = 0; //To prevent going below 0
         Helper.printMsg("Big Blind Amount: " + bigBlindAmount, true);
+        $('#dealerBigBlind').toggleClass('hide');
 
         if(myDealer.isBigBlind == true){
             myPlayer.isTurn = true; //Small blind starts first
@@ -640,7 +657,7 @@ $(() => {
             myDealer.updateBalance(-(myDealer.blindAmount));
             myPlayer.updateBalance(-(myPlayer.blindAmount));
             tableAmount = myDealer.blindAmount + myPlayer.blindAmount;
-            $('#dealerBigBlind').toggleClass('hide');
+            //$('#dealerBigBlind').toggleClass('hide');
         }
         else if(myPlayer.isBigBlind == true){
             myDealer.isTurn = true; //Small blind starts first
@@ -751,18 +768,26 @@ $(() => {
         //Step 10/10
         if (myGame.winnerFound == false){
             winnerMessage = checkPair(localDealerCards, localPlayerCards);
+            console.log(myPlayer.currentBalance);
+            console.log(myDealer.currentBalance);
         }
-        else if (myGame.winnerFound == false){
-            winnerMessage = checkHighCard(localDealerCards, localPlayerCards)
+        if (myGame.winnerFound == false){
+            winnerMessage = checkHighCard(localDealerCards, localPlayerCards);
+            console.log(myPlayer.currentBalance);
+            console.log(myDealer.currentBalance);
         }
 
         if (winnerMessage != ""){
-            Helper.printMsg(winnerMessage);
-            Helper.readOutLoud(winnerMessage);
+            Helper.printWinningMsg(winnerMessage);
+            Helper.readOutLoud(winnerMessage, mySettings.textToSpeech);
+            tableAmount = 0;
+            populateTableBalance();
+            populatePlayerBalance();
+            populateDealerBalance();
         }
         else { //To-DO: Split table amount
-            Helper.printMsg("No winner found. Table amount will be split.");
-            Helper.readOutLoud("No winner found. Table amount will be split.");
+            Helper.printWinningMsg("No winner found. Table amount will be split.");
+            Helper.readOutLoud("No winner found. Table amount will be split.", mySettings.textToSpeech);
         }
     }
 
@@ -779,14 +804,18 @@ $(() => {
 
         if (dealerHighestCard[0].valueNumeric > playerHighestCard[0].valueNumeric){
             myGame.winnerFound = true;
-            return "Dealer Won! Highest card is: " + dealerHighestCard[0].valueNumeric;
+            myDealer.updateBalance(tableAmount);
+            return "Dealer Won! Highest card is: " + dealerHighestCard[0].value;
         }
         else if (dealerHighestCard[0].valueNumeric === playerHighestCard[0].valueNumeric){
-            return "It's a draw! Highest card is: " + dealerHighestCard[0].valueNumeric;
+            myDealer.updateBalance(tableAmount * 0.5);
+            myPlayer.updateBalance(tableAmount * 0.5);
+            return "It's a draw! Highest card is: " + dealerHighestCard[0].value;
         }
         else if (playerHighestCard[0].valueNumeric === dealerHighestCard[0].valueNumeric){
             myGame.winnerFound = true;
-            return "Player Won! Highest card is: " + playerHighestCard[0].valueNumeric;
+            myPlayer.updateBalance(tableAmount);
+            return "Player Won! Highest card is: " + playerHighestCard[0].value;
         }
         else{
             return ""; //No Winner Found. This will never happen.
@@ -799,6 +828,7 @@ $(() => {
         let localPlayerHighestCard = myGame.sortByLargestValue(playerCards);
         let localDealerPair = [];
         let localPlayerPair = [];
+        let winnerObj = {}; //empty object
 
         //Only obtain the 1st 2 pairs dealerPair.
         for (let i = 1; i < localDealerHighestCard.length; i++){
@@ -825,55 +855,83 @@ $(() => {
         console.log(localDealerPair);
         console.log(localPlayerPair);
 
-        //Check dealer or player has the highest number of pair count
+        //if the number of pair is 0
         if (localDealerPair.length === localPlayerPair.length && localDealerPair.length === 0){
+            myDealer.updateBalance(tableAmount * 0.5);
+            myPlayer.updateBalance(tableAmount * 0.5);
             return "No Pair found!"; //No Pair for both dealer and player
         }
+        //If dealer has more pair than player
         else if(localDealerPair.length > localPlayerPair.length){
             myGame.winnerFound = true;
-            return "Dealer won with " + localDealerPair.length + " pair(s)!";
+            myDealer.updateBalance(tableAmount);
+            return "Dealer won with " + localDealerPair.length + " pair(s)! ";
         }
+        //If player has more pair than dealer
         else if (localPlayerPair.length > localDealerPair.length){
             myGame.winnerFound = true;
-            return "Player won with " + localPlayerPair.length + " pair(s)!";
+            myPlayer.updateBalance(tableAmount);
+            return "Player won with " + localPlayerPair.length + " pair(s)! ";
         }
+
         //If the number of pairs are the same. Then check the highest pair value. Both having 1 pair
         else if (localDealerPair.length === localPlayerPair.length && localDealerPair.length === 1) {
             if(localPlayerPair[0][0].valueNumeric > localDealerPair[0][0].valueNumeric){ //Check 1st Card of the Pair
                 myGame.winnerFound = true;
-                return "Player Won with " + localPlayerPair[0].valueNumeric + " pair!";
+                myPlayer.updateBalance(tableAmount);
+                return "Player Won with a " + localPlayerPair[0][0].value + " pair!";
             }
             else if(localDealerPair[0][0].valueNumeric > localPlayerPair[0][0].valueNumeric){ //Check 1st Card of the Pair
                 myGame.winnerFound = true;
-                return "Dealer Won with " + localDealerPair[0][0].valueNumeric + " pair!";
+                myDealer.updateBalance(tableAmount);
+                return "Dealer Won with a " + localDealerPair[0][0].value + " pair!";
             }
             else{
-                return "Dealer draw with player. Both having 1 pair with " + localDealerPair[0][0].valueNumeric + " value!";
+                myDealer.updateBalance(tableAmount * 0.5);
+                myPlayer.updateBalance(tableAmount * 0.5);
+                return "Dealer draw with player. Both having 1 pair with " + localDealerPair[0][0].value + " value!";
             }
         }
 
+        //If both dealer and player having 2 pairs
         else if (localDealerPair.length === localPlayerPair.length && localDealerPair.length === 2){
-            if(localDealerPair[0][0].valueNumeric > localDealerPair[0][0].valueNumeric){ //Check 1st pair
+            //If player having the 1st pair value greater than the dealer
+            if(localPlayerPair[0][0].valueNumeric > localDealerPair[0][0].valueNumeric){
                 myGame.winnerFound = true;
-                return "Player Won with " + localPlayerPair[0].valueNumeric + " pair!";
+                myPlayer.updateBalance(tableAmount);
+                return "Player Won with " + localPlayerPair.length + " pair! " + localPlayerPair[0][0].value + " pair, and " + localPlayerPair[1][0].value;
             }
-            else if (localPlayerPair[0][0].valueNumeric === localDealerPair[0][0].valueNumeric){ //1st pair having the same value
-                if (localPlayerPair[1][0].valueNumeric > localDealerPair[1][0].valueNumeric){ //Check 2nd pair
+            //If both player and dealer 1st hair is having the same value
+            else if (localPlayerPair[0][0].valueNumeric === localDealerPair[0][0].valueNumeric){
+                //if player second pair is higher than dealer second pair
+                if (localPlayerPair[1][0].valueNumeric > localDealerPair[1][0].valueNumeric){
                     myGame.winnerFound = true;
-                    return "Player Won with 2 pairs. " + localPlayerPair[0][0].valueNumeric + " pair, and " + localPlayerPair[0][1].valueNumeric + " pair!";
+                    myPlayer.updateBalance(tableAmount);
+                    return "Player Won with 2 pairs. " + localPlayerPair[0][0].value + " pair, and " + localPlayerPair[1][0].value + " pair!";
                 }
-                else if (localDealerPair[1][0].valueNumeric > localPlayerPair[1][0].valueNumeric){ //Check 2nd pair
+                //if dealer second pair is higher than player second pair
+                else if (localDealerPair[1][0].valueNumeric > localPlayerPair[1][0].valueNumeric){
                     myGame.winnerFound = true;
-                    return "Dealer Won with 2 pairs. " + localDealerPair[0][0].valueNumeric + " pair, and " + localDealerPair[0][1].valueNumeric + " pair!";
+                    myDealer.updateBalance(tableAmount);
+                    return "Dealer Won with 2 pairs. " + localDealerPair[0][0].value + " pair, and " + localDealerPair[1][0].value + " pair!";
                 }
+                //if both player and dealer having 2 highest pair with both same value
                 else {
-                    return "Dealer draw with player. Both having 2 pairs. " + localDealerPair[0][0].valueNumeric + " pair, and " + localDealerPair[0][1].valueNumeric + " pair!";
+                    myDealer.updateBalance(tableAmount * 0.5);
+                    myPlayer.updateBalance(tableAmount * 0.5);
+                    return "Dealer draw with player. Both having 2 pairs. " + localDealerPair[0][0].value + " pair, and " + localDealerPair[1][0].value + " pair!";
                 }
+            }
+            //If dealer having the 1st pair value greater than the player
+            else if (localDealerPair[0][0].valueNumeric > localPlayerPair[0][0].valueNumeric){ //Check 1st pair
+                myGame.winnerFound = true;
+                myDealer.updateBalance(tableAmount);
+                return "Dealer Won with " + localDealerPair.length + " pair! " + localDealerPair[0][0].value + " pair, and " + localDealerPair[1][0].value + " pair!";
             }
         }
-        //To-DO: Implement draw with 2 pairs each
     }
 
+    //To-DO: Remove this
     const checkRoyalFlush = () => {
         let tempArray =
             [
@@ -924,10 +982,9 @@ $(() => {
 
     $('#newRoundBtn').on('click', (ev) => {
         ev.preventDefault();
-        //rotateBlind();
         currentRound = 0;
         myGame.gameReset();
-        Helper.readOutLoud("New Round. Good Luck!");
+        Helper.readOutLoud("New Round. Good Luck!", mySettings.textToSpeech);
         startNewRound();
     })
 
@@ -940,7 +997,7 @@ $(() => {
         ev.preventDefault();
     })
 
-    $('.chip').on('click',(ev) => {
+    $('.chipsBet').on('click',(ev) => {
         let clickedValue = ev.currentTarget.id;
         ev.preventDefault();
 
