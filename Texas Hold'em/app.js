@@ -68,6 +68,10 @@ class Game {
         this.communityCards = [];   //5th to 9th cards
         this.players = [];
         this.totalCardCount = 0;
+        this.dealerByHighestCard = [];
+        this.playerByHighestCard = [];
+        this.dealerPair = [];
+        this.playerPair = [];
     }
 
     preFlopCardCount () {
@@ -153,6 +157,18 @@ class Game {
         }
         return arrayParam;
     }
+
+    gameReset() {
+        this.dealerCards = [];  //1st and 3rd cards
+        this.playerCards = [];  //2nd and 4th cards
+        this.communityCards = [];   //5th to 9th cards
+        this.players = [];
+        this.totalCardCount = 0;
+        this.dealerByHighestCard = [];
+        this.playerByHighestCard = [];
+        this.dealerPair = [];
+        this.playerPair = [];
+    }
 }
 
 class Helper {
@@ -220,17 +236,20 @@ $(() => {
         Helper.readOutLoud("Game Started. Good Luck!");
         myGame = new Game();
         myGame.playerCount = 2;
-        myGame.deckCount = 1;
+        myGame.deckCount = 4;
         myGame.minimumAmount = minimumAmount;
         myGame.generatePlayerProfile(5000); // Default Amount as $5,000
         myDealer = Helper.findDealer(myGame.players);
         myPlayer = Helper.findPlayer(myGame.players);
 
-        createNewDeck();
         populateInitialBalance(myDealer, myPlayer);
+        startNewRound();
+    }
+
+    const startNewRound = () => {
+        createNewDeck();
         startGameDefaultButton();
         populateSmallBigBlind();
-        // setAndRotateTurn(myDealer, myPlayer);
     }
 
     const disabledButton = (button) => {
@@ -328,7 +347,7 @@ $(() => {
         disabledButton($('#checkBtn'));
         disabledButton($('#foldBtn'));
         disabledButton($('#allInBtn'));
-        disabledButton($('#nextRoundBtn'));
+        disabledButton($('#newRoundBtn'));
         //disabledButton($('#startBtn'));
     }
 
@@ -338,7 +357,12 @@ $(() => {
         disabledButton($('#foldBtn'));
         disabledButton($('#allInBtn'));
         disabledButton($('#startBtn'));
-        disabledButton($('#nextRoundBtn'));
+        disabledButton($('#newRoundBtn'));
+    }
+
+    const newRoundDefaultButton = () => {
+        disabledButton($('#betCallBtn'));
+        enabledButton($('#newRoundBtn'));
     }
 
     const populateTableBalance = () => {
@@ -355,16 +379,18 @@ $(() => {
         //Hide Dealer and Community Card by default
 
         // $('#dealer1').css('background-image','url(' + myGame.dealerCards[0].image + ')');
-        $('#dealer1').addClass('card-face-down-rotated-dealer1');
-        $('#player1').css('background-image','url(' + myGame.playerCards[0].image + ')');
+        $('#dealer1').removeClass().css('background-image', '').addClass('dealer1').addClass('card-face-down-rotated-dealer1');
+        $('#player1').removeClass().css('background-image','').addClass('player1').css('background-image','url(' + myGame.playerCards[0].image + ')');
         // $('#dealer2').css('background-image','url(' + myGame.dealerCards[1].image + ')');
-        $('#dealer2').addClass('card-face-down-rotated-dealer2');
-        $('#player2').css('background-image','url(' + myGame.playerCards[1].image + ')');
+        $('#dealer2').removeClass().css('background-image', '').addClass('dealer2').addClass('card-face-down-rotated-dealer2');
+        $('#player2').removeClass().css('background-image','').addClass('player2').css('background-image','url(' + myGame.playerCards[1].image + ')');
 
         //Display community cards
-        $('#community1').addClass('community-card-face-down');
-        $('#community2').addClass('community-card-face-down');
-        $('#community3').addClass('community-card-face-down');
+        $('#community1').removeClass().css('background-image', '').addClass('communityCards').addClass('community1').addClass('community-card-face-down');
+        $('#community2').removeClass().css('background-image', '').addClass('communityCards').addClass('community2').addClass('community-card-face-down');
+        $('#community3').removeClass().css('background-image', '').addClass('communityCards').addClass('community3').addClass('community-card-face-down');
+        $('#community4').removeClass().css('background-image', '');
+        $('#community5').removeClass().css('background-image', '');
 
         // $('#community1').css('background-image','url(' + myGame.communityCards[0].image + ')');
         // $('#community2').css('background-image','url(' + myGame.communityCards[1].image + ')');
@@ -430,14 +456,15 @@ $(() => {
         updatePlayerBet(amount, round);
     }
 
-    const betCall = (dealerOrPlayer, round) => {
+    const betCall = (round) => {
         //PreFlop Round, move the bets to the table, and take turn
+        debugger;
         Helper.printMsg("Dealer turn? " + myDealer.isTurn);
         Helper.printMsg("Player turn? " + myPlayer.isTurn);
         let dealerMatchAmount = 0;
 
         if(round == 1){
-            dealerMatchAmount = (currentRoundPlayerAccBet + dealerOrPlayer.blindAmount) - myDealer.blindAmount;
+            dealerMatchAmount = (currentRoundPlayerAccBet + myPlayer.blindAmount) - myDealer.blindAmount;
         }
         else if (round == 2){
             dealerMatchAmount = currentRoundPlayerAccBet - myDealer.flopHoldingAmount;
@@ -491,23 +518,16 @@ $(() => {
             if (currentRound === 5){
                 console.log("TO-DO: Determine Winner...");
                 calculateWinner(myDealer, myPlayer);
-                startNewRound();
+                newRoundDefaultButton();
             }
         }
     }
 
-    const startNewRound = () => {
-        disabledButton($('#betCallBtn'));
-        enabledButton($('#nextRoundBtn'));
-        currentRound = 0; //Reset Current Round
-    }
-
     //DOM MANIPULATIONS
-    const populateNewDeck = (response, deckId) => {
-        myGame.totalCardCount = response.remaining
-        deckId = response.deck_id;
-        myGame.deckId = deckId;
-        startPreFlop(deckId);
+    const populateNewDeck = (response) => {
+        myGame.totalCardCount = response.remaining;
+        myGame.deckId = response.deck_id;;
+        startPreFlop(myGame.deckId);
     }
 
     const populateInitialBalance = (dealer, player) => {
@@ -527,6 +547,8 @@ $(() => {
     const populatePreFlopCards = (response) => {
         let myCard;
         let cardSequence = 0;
+        console.log("Preflop Card: " + myCard);
+
         //assign cards to variable
         while(cardSequence < 9){
             for (let i = 0; i < response.cards.length; i++){
@@ -583,6 +605,7 @@ $(() => {
         Helper.printMsg("Big Blind Amount: " + bigBlindAmount, true);
 
         if(myDealer.isBigBlind == true){
+            debugger;
             myPlayer.isTurn = true; //Small blind starts first
             myDealer.blindAmount = parseInt(bigBlindAmount);
             myPlayer.blindAmount = parseInt(bigBlindAmount) * 0.5;
@@ -592,6 +615,7 @@ $(() => {
             $('#dealerBigBlind').toggleClass('hide');
         }
         else if(myPlayer.isBigBlind == true){
+            debugger;
             myDealer.isTurn = true; //Small blind starts first
             myPlayer.blindAmount = parseInt(bigBlindAmount);
             myDealer.blindAmount = parseInt(bigBlindAmount) * 0.5;
@@ -723,69 +747,69 @@ $(() => {
     }
 
     const checkPair = (dealerCards, playerCards) => {
-        let dealerByHighestCard = myGame.sortByLargestValue(dealerCards);
-        let playerByHighestCard = myGame.sortByLargestValue(playerCards);
-        let dealerPair = [];
-        let playerPair = [];
+        //Force empty the array to support for multiple round
+
+        myGame.dealerByHighestCard = myGame.sortByLargestValue(dealerCards);
+        myGame.playerHighestCard = myGame.sortByLargestValue(playerCards);
 
         //Only obtain the 1st 2 pairs dealerPair.
-        for (let i = 1; i < dealerByHighestCard.length; i++){
-            if(dealerByHighestCard[i].value === dealerByHighestCard[i-1].value && dealerPair.length <= 4){
+        for (let i = 1; i < myGame.dealerByHighestCard.length; i++){
+            if(myGame.dealerByHighestCard[i].value === myGame.dealerByHighestCard[i-1].value && myGame.dealerPair.length <= 4){
                 let tempPairArray = [];
-                tempPairArray.push(dealerByHighestCard[i]);
-                tempPairArray.push(dealerByHighestCard[i-1]);
-                dealerPair.push(tempPairArray); //Push the 1st pair card into the player array
+                tempPairArray.push(myGame.dealerByHighestCard[i]);
+                tempPairArray.push(myGame.dealerByHighestCard[i-1]);
+                myGame.dealerPair.push(tempPairArray); //Push the 1st pair card into the player array
                 i++ //Skip the card with the pair that was pushed into dealer array
             }
         }
 
         //Only obtain the 1st 2 pairs playerPair.
-        for (let i = 1; i < playerByHighestCard.length; i++){
-            if(playerByHighestCard[i].value === playerByHighestCard[i-1].value && playerPair.length <= 2){
+        for (let i = 1; i < myGame.playerByHighestCard.length; i++){
+            if(myGame.playerByHighestCard[i].value === myGame.playerByHighestCard[i-1].value && myGame.playerPair.length <= 2){
                 let tempPairArray = [];
-                tempPairArray.push(playerByHighestCard[i]);
-                tempPairArray.push(playerByHighestCard[i-1]);
-                playerPair.push(tempPairArray); //Push the 1st pair card into the player array
+                tempPairArray.push(myGame.playerByHighestCard[i]);
+                tempPairArray.push(myGame.playerByHighestCard[i-1]);
+                myGame.playerPair.push(tempPairArray); //Push the 1st pair card into the player array
                 i++ //Skip the card with the pair that was pushed into dealer array
             }
         }
 
         //Check dealer or player has the highest number of pair count
-        if (dealerPair.length === playerPair.length && dealerPair.length === 0){
+        if (myGame.dealerPair.length === myGame.playerPair.length && myGame.dealerPair.length === 0){
             Helper.printMsg("No pair found!"); //No Pair for both dealer and player
             return false;
         }
-        else if(dealerPair.length > playerPair.length){
-            return "Dealer Won with " + dealerPair.length + " pair(s)!";
+        else if(myGame.dealerPair.length > myGame.playerPair.length){
+            return "Dealer Won with " + myGame.dealerPair.length + " pair(s)!";
         }
-        else if (dealerPair.length > dealerPair.length){
-            return "Player Won with " + playerPair.length + " pair(s)!";
+        else if (myGame.dealerPair.length > myGame.dealerPair.length){
+            return "Player Won with " + myGame.playerPair.length + " pair(s)!";
         }
         //If the number of pairs are the same. Then check the highest pair value. Both having 1 pair
-        else if (dealerPair.length === playerPair.length && dealerPair.length === 1) {
-            if(playerPair[0][0].value > dealerPair[0][0].value){ //Check 1st Card of the Pair
-                return "Player Won with " + playerPair[0].value + " pair!";
+        else if (myGame.dealerPair.length === myGame.playerPair.length && myGame.dealerPair.length === 1) {
+            if(myGame.playerPair[0][0].value > myGame.dealerPair[0][0].value){ //Check 1st Card of the Pair
+                return "Player Won with " + myGame.playerPair[0].value + " pair!";
             }
-            else if(dealerPair[0][0].value > playerPair[0][0].value){ //Check 1st Card of the Pair
-                return "Dealer Won with " + dealerPair[0][0].value + " pair!";
+            else if(myGame.dealerPair[0][0].value > myGame.playerPair[0][0].value){ //Check 1st Card of the Pair
+                return "Dealer Won with " + myGame.dealerPair[0][0].value + " pair!";
             }
             else
-                return "Dealer draw with player. Both having 1 pair with " + dealerPair[0][0].value + " value!";
+                return "Dealer draw with player. Both having 1 pair with " + myGame.dealerPair[0][0].value + " value!";
         }
 
-        else if (dealerPair.length === playerPair.length && dealerPair.length === 2){
-            if(playerPair[0][0].value > dealerPair[0][0].value){ //Check 1st pair
-                return "Player Won with " + playerPair[0].value + " pair!";
+        else if (myGame.dealerPair.length === myGame.playerPair.length && myGame.dealerPair.length === 2){
+            if(myGame.playerPair[0][0].value > myGame.dealerPair[0][0].value){ //Check 1st pair
+                return "Player Won with " + myGame.playerPair[0].value + " pair!";
             }
-            else if (playerPair[0][0].value === dealerPair[0][0].value){ //1st pair having the same value
-                if (playerPair[1][0].value > dealerPair[1][0].value){ //Check 2nd pair
-                    return "Player Won with 2 pairs. " + playerPair[0][0].value + " pair, and " + playerPair[0][1].value + " pair!";
+            else if (myGame.playerPair[0][0].value === myGame.dealerPair[0][0].value){ //1st pair having the same value
+                if (myGame.playerPair[1][0].value > myGame.dealerPair[1][0].value){ //Check 2nd pair
+                    return "Player Won with 2 pairs. " + myGame.playerPair[0][0].value + " pair, and " + myGame.playerPair[0][1].value + " pair!";
                 }
-                else if (dealerPair[1][0].value > playerPair[1][0].value){ //Check 2nd pair
-                    return "Dealer Won with 2 pairs. " + dealerPair[0][0].value + " pair, and " + dealerPair[0][1].value + " pair!";
+                else if (myGame.dealerPair[1][0].value > myGame.playerPair[1][0].value){ //Check 2nd pair
+                    return "Dealer Won with 2 pairs. " + myGame.dealerPair[0][0].value + " pair, and " + myGame.dealerPair[0][1].value + " pair!";
                 }
                 else {
-                    return "Dealer draw with player. Both having 2 pairs. " + dealerPair[0][0].value + " pair, and " + dealerPair[0][1].value + " pair!";
+                    return "Dealer draw with player. Both having 2 pairs. " + myGame.dealerPair[0][0].value + " pair, and " + myGame.dealerPair[0][1].value + " pair!";
                 }
             }
         }
@@ -837,7 +861,16 @@ $(() => {
 
     $('#betCallBtn').on('click', (ev) => {
         ev.preventDefault();
-        betCall(Helper.findPlayerInTurn(myGame.players), currentRound); //Process BetCall Function for current player in play
+        betCall(currentRound); //Process BetCall Function for current player in play
+    })
+
+    $('#newRoundBtn').on('click', (ev) => {
+        ev.preventDefault();
+        //rotateBlind();
+        currentRound = 0;
+        myGame.gameReset();
+        Helper.readOutLoud("New Round. Good Luck!");
+        startNewRound();
     })
 
     $('#confirmAmtButton').on('click', (ev) => {
@@ -847,7 +880,6 @@ $(() => {
 
     $('#calcWinnerBtn').on('click', (ev) => {
         ev.preventDefault();
-        Helper.readOutLoud("");
     })
 
     $('.chip').on('click',(ev) => {
