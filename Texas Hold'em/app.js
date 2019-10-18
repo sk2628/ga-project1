@@ -22,6 +22,25 @@ console.log("Connnected");
 //...............................................................................................................
 //.Comment Generator Courtesy: https://codepen.io/sakri/pen/Iklgx................................................
 
+
+//................................................................
+//......CCC................................SSSSSS......SSSSSS.....
+//....CCCCCCCC...LLLL..........AAAAA......SSSSSSSS....SSSSSSSS....
+//...CCCCCCCCCC..LLLL..........AAAAA.....SSSSSSSSSS..SSSSSSSSSS...
+//..CCCCCCCCCCC..LLLL.........AAAAAAA....SSSSSSSSSS..SSSSSSSSSS...
+//..CCCC...CCCCC.LLLL.........AAAAAAA...SSSS...SSSSSSSSS...SSSSS..
+//.CCCCC....CCCC.LLLL.........AAAAAAA...SSSSSS......SSSSSS........
+//.CCCC..........LLLL........AAAAAAAAA...SSSSSSSSS...SSSSSSSSS....
+//.CCCC..........LLLL........AAAA.AAAA...SSSSSSSSSS..SSSSSSSSSS...
+//.CCCC..........LLLL........AAAAAAAAAA....SSSSSSSSS...SSSSSSSSS..
+//.CCCCC....CCCC.LLLL.......AAAAAAAAAAA.SSSS..SSSSSSSSSS..SSSSSS..
+//..CCCC...CCCCC.LLLL.......AAAAAAAAAAA.SSSS....SSSSSSSS....SSSS..
+//..CCCCCCCCCCC..LLLLLLLLLL.AAAAAAAAAAAASSSSSSSSSSSSSSSSSSSSSSSS..
+//...CCCCCCCCCC..LLLLLLLLLLAAAAA....AAAA.SSSSSSSSSS..SSSSSSSSSS...
+//....CCCCCCCC...LLLLLLLLLLAAAA.....AAAA..SSSSSSSSS...SSSSSSSSS...
+//.....CCCCC...............................SSSSSS......SSSSSS.....
+//................................................................
+
 class Card {
     constructor(image, value, suit, code, valueNumeric){
         this.image = image;
@@ -260,14 +279,6 @@ $(() => {
         populateSmallBigBlind();
     }
 
-    const disabledButton = (button) => {
-        button.removeClass().addClass('btn').addClass('btn-secondary').addClass('disabled').addClass('disabledButton');
-    }
-
-    const enabledButton = (button) => {
-        button.removeClass().addClass('btn').addClass('btn-primary');
-    }
-
     //Create New Deck and return the deck ID
     const createNewDeck = () => {
 
@@ -351,6 +362,32 @@ $(() => {
         }
     }
 
+//............................................................................
+//....................................................OOOOOO..................
+//.BBBBBBBBBB...UUUU...UUUU.UTTTTTTTTTTTTTTTTTTTTT..OOOOOOOOO...ONNNN...NNNN..
+//.BBBBBBBBBBB..UUUU...UUUU.UTTTTTTTTTTTTTTTTTTTTT.OOOOOOOOOOO..ONNNNN..NNNN..
+//.BBBBBBBBBBB..UUUU...UUUU.UTTTTTTTTTTTTTTTTTTTTT.OOOOOOOOOOOO.ONNNNN..NNNN..
+//.BBBB...BBBB..UUUU...UUUU.....TTTT.......TTTT...TOOOO....OOOO.ONNNNNN.NNNN..
+//.BBBB..BBBBB..UUUU...UUUU.....TTTT.......TTTT...TOOO.....OOOO.ONNNNNN.NNNN..
+//.BBBBBBBBBBB..UUUU...UUUU.....TTTT.......TTTT...TOOO......OOOOONNNNNNNNNNN..
+//.BBBBBBBBBBB..UUUU...UUUU.....TTTT.......TTTT...TOOO......OOOOONNNNNNNNNNN..
+//.BBBBBBBBBBB..UUUU...UUUU.....TTTT.......TTTT...TOOO......OOOOONNN.NNNNNNN..
+//.BBBB....BBBB.UUUU...UUUU.....TTTT.......TTTT...TOOO.....OOOO.ONNN.NNNNNNN..
+//.BBBB...BBBBB.UUUU...UUUU.....TTTT.......TTTT...TOOOO....OOOO.ONNN..NNNNNN..
+//.BBBBBBBBBBB..UUUUUUUUUUU.....TTTT.......TTTT....OOOOOOOOOOOO.ONNN...NNNNN..
+//.BBBBBBBBBBB..UUUUUUUUUUU.....TTTT.......TTTT.....OOOOOOOOOO..ONNN...NNNNN..
+//.BBBBBBBBBB....UUUUUUUUU......TTTT.......TTTT.....OOOOOOOOO...ONNN....NNNN..
+//.................UUUUU..............................OOOOOO..................
+//............................................................................
+
+    const disabledButton = (button) => {
+        button.removeClass().addClass('btn').addClass('btn-secondary').addClass('disabled').addClass('disabledButton');
+    }
+
+    const enabledButton = (button) => {
+        button.removeClass().addClass('btn').addClass('btn-primary');
+    }
+
     const defaultButton = () => {
         console.log("defaultButton clicked");
         disabledButton($('#betCallBtn'));
@@ -370,7 +407,7 @@ $(() => {
     const startGameDefaultButton = () => {
         enabledButton($('#betCallBtn'));
         disabledButton($('#checkBtn'));
-        disabledButton($('#foldBtn'));
+        enabledButton($('#foldBtn'));
         disabledButton($('#allInBtn'));
         disabledButton($('#startBtn'));
         disabledButton($('#newRoundBtn'));
@@ -380,7 +417,106 @@ $(() => {
         disabledButton($('#betCallBtn'));
         enabledButton($('#newRoundBtn'));
         disabledButton($('#checkBtn'));
+        disabledButton($('#foldBtn'));
     }
+
+    const check = (round) => {
+        setAndRotateTurn(myDealer, myPlayer);
+
+        currentRound++;
+        setAndRotateTurn(myDealer, myPlayer);
+
+        Helper.printMsg("Round " + round + " completed. Place your bet!");
+        drawAndRevealCard(currentRound);
+
+        if (currentRound === 5){
+            console.log(myGame.dealerCards);
+            console.log(myGame.playerCards);
+            calculateWinner();
+            newRoundDefaultButton();
+        }
+    }
+
+    const fold = () => {
+        myDealer.updateBalance(tableAmount);
+        processWinner("Player fold. Dealer won!");
+        Helper.readOutLoud("Player fold. Dealer won!", mySettings.textToSpeech);
+        newRoundDefaultButton();
+        currentRound = 0;
+    }
+
+    const betCall = (round) => {
+        //PreFlop Round, move the bets to the table, and take turn
+        let dealerMatchAmount = 0;
+
+        if(round == 1){
+            dealerMatchAmount = (myGame.currentRoundPlayerAccBet + myPlayer.blindAmount) - myDealer.blindAmount;
+        }
+        else if (round == 2){
+            dealerMatchAmount = myGame.currentRoundPlayerAccBet - myDealer.flopHoldingAmount;
+        }
+        else if (round == 3){
+            dealerMatchAmount = myGame.currentRoundPlayerAccBet - myDealer.turnHoldingAmount;
+        }
+        else if (round == 4){
+            dealerMatchAmount = myGame.currentRoundPlayerAccBet - myDealer.riverHoldingAmount;
+        }
+
+        //If Dealer does not have the require match amount, then dealer will consider as "ALL-IN"
+        if(dealerMatchAmount > myDealer.currentBalance){
+            dealerMatchAmount = myDealer.currentBalance;
+            Helper.printMsg("Dealer All-In!");
+            Helper.readOutLoud("Dealer All-In!", mySettings.textToSpeech);
+        }
+
+        if (dealerMatchAmount < 0){
+            Helper.printMsg("Please place an additional: " +  Helper.formatAmount(Math.abs(dealerMatchAmount)) + " or more");
+            Helper.readOutLoud("Please place an additional: " +  Helper.formatAmount(Math.abs(dealerMatchAmount)) + " or more", mySettings.textToSpeech);
+        }
+
+        //No chip was placed. For Pre-flop (Round 1). allow to match against the big blind amount
+        else if (dealerMatchAmount === 0 && round > 1){
+            Helper.printMsg("Place some chip to bet!");
+            Helper.readOutLoud("Place some chip to bet!", mySettings.textToSpeech);
+        }
+
+        else if(dealerMatchAmount >= 0){ //Bet match the minimum placed by dealer. proceed to the next stage
+
+            //Player Handling - Moved Confirmed Amount and reset preflop amount
+
+            //Update Table after player
+            setTableBalance(myGame.currentRoundPlayerAccBet);
+            Helper.printMsg("Moved " + myGame.currentRoundPlayerAccBet + " from Player to Table.");
+            Helper.readOutLoud("Player bet " + Helper.formatAmount(myGame.currentRoundPlayerAccBet), mySettings.textToSpeech);
+
+            myGame.currentRoundPlayerAccBet = 0; //Reset current bet amount to 0
+            populatePlayerBet(myGame.currentRoundPlayerAccBet);
+
+            //Table Handling
+            setTableBalance(dealerMatchAmount);
+            populateTableBalance();
+
+            //if player raise amount higher than the preflop amount, dealer will automatically match it
+            setAndRotateTurn(myDealer, myPlayer);
+            updateDealerBet(dealerMatchAmount, currentRound);
+            Helper.printMsg("Dealer match with " + Helper.formatAmount(dealerMatchAmount));
+
+            currentRound++;
+            checkButtonControl();
+            setAndRotateTurn(myDealer, myPlayer);
+
+            Helper.printMsg("Round " + round + " completed. Place your bet!");
+            drawAndRevealCard(currentRound);
+
+            if (currentRound === 5){
+                console.log(myGame.dealerCards);
+                console.log(myGame.playerCards);
+                calculateWinner();
+                newRoundDefaultButton();
+            }
+        }
+    }
+
 
     const populateTableBalance = () => {
         $('#tableBetLabel').empty();
@@ -478,95 +614,6 @@ $(() => {
         }
         else{
             updatePlayerBet(amount, round);
-        }
-    }
-
-    const check = (round) => {
-        setAndRotateTurn(myDealer, myPlayer);
-
-        currentRound++;
-        setAndRotateTurn(myDealer, myPlayer);
-
-        Helper.printMsg("Round " + round + " completed. Place your bet!");
-        drawAndRevealCard(currentRound);
-
-        if (currentRound === 5){
-            console.log(myGame.dealerCards);
-            console.log(myGame.playerCards);
-            calculateWinner();
-            newRoundDefaultButton();
-        }
-    }
-
-    const betCall = (round) => {
-        //PreFlop Round, move the bets to the table, and take turn
-        let dealerMatchAmount = 0;
-
-        if(round == 1){
-            dealerMatchAmount = (myGame.currentRoundPlayerAccBet + myPlayer.blindAmount) - myDealer.blindAmount;
-        }
-        else if (round == 2){
-            dealerMatchAmount = myGame.currentRoundPlayerAccBet - myDealer.flopHoldingAmount;
-        }
-        else if (round == 3){
-            dealerMatchAmount = myGame.currentRoundPlayerAccBet - myDealer.turnHoldingAmount;
-        }
-        else if (round == 4){
-            dealerMatchAmount = myGame.currentRoundPlayerAccBet - myDealer.riverHoldingAmount;
-        }
-
-        //If Dealer does not have the require match amount, then dealer will consider as "ALL-IN"
-        if(dealerMatchAmount > myDealer.currentBalance){
-            dealerMatchAmount = myDealer.currentBalance;
-            Helper.printMsg("Dealer All-In!");
-            Helper.readOutLoud("Dealer All-In!", mySettings.textToSpeech);
-        }
-
-        if (dealerMatchAmount < 0){
-            Helper.printMsg("Please place an additional: " +  Helper.formatAmount(Math.abs(dealerMatchAmount)) + " or more");
-            Helper.readOutLoud("Please place an additional: " +  Helper.formatAmount(Math.abs(dealerMatchAmount)) + " or more", mySettings.textToSpeech);
-        }
-
-        //No chip was placed. For Pre-flop (Round 1). allow to match against the big blind amount
-        else if (dealerMatchAmount === 0 && round > 1){
-            Helper.printMsg("Place some chip to bet!");
-            Helper.readOutLoud("Place some chip to bet!", mySettings.textToSpeech);
-        }
-
-        else if(dealerMatchAmount >= 0){ //Bet match the minimum placed by dealer. proceed to the next stage
-
-            //Player Handling - Moved Confirmed Amount and reset preflop amount
-
-            //Update Table after player
-            setTableBalance(myGame.currentRoundPlayerAccBet);
-            Helper.printMsg("Moved " + myGame.currentRoundPlayerAccBet + " from Player to Table.");
-            Helper.readOutLoud("Player bet " + Helper.formatAmount(myGame.currentRoundPlayerAccBet), mySettings.textToSpeech);
-
-            myGame.currentRoundPlayerAccBet = 0; //Reset current bet amount to 0
-            populatePlayerBet(myGame.currentRoundPlayerAccBet);
-
-            //Table Handling
-            setTableBalance(dealerMatchAmount);
-            populateTableBalance();
-
-            //if player raise amount higher than the preflop amount, dealer will automatically match it
-            setAndRotateTurn(myDealer, myPlayer);
-            updateDealerBet(dealerMatchAmount, currentRound);
-            Helper.printMsg("Dealer match with " + Helper.formatAmount(dealerMatchAmount));
-
-            currentRound++;
-            checkButtonControl();
-            setAndRotateTurn(myDealer, myPlayer);
-
-            Helper.printMsg("Round " + round + " completed. Place your bet!");
-            drawAndRevealCard(currentRound);
-
-            if (currentRound === 5){
-                console.log(myGame.dealerCards);
-                console.log(myGame.playerCards);
-                calculateWinner();
-                newRoundDefaultButton();
-            }
         }
     }
 
@@ -798,6 +845,12 @@ $(() => {
         }
 
         //A winner is found
+        if(winnerMessage != ""){
+            processWinner(winnerMessage);
+        }
+    }
+
+    const processWinner = (winnerMessage) => {
         if (winnerMessage != ""){
             Helper.printWinningMsg(winnerMessage);
             Helper.readOutLoud(winnerMessage, mySettings.textToSpeech);
@@ -979,7 +1032,23 @@ $(() => {
         //console.log(checkHighCard(tempArray));
     }
 
-    //EVENT LISTENER STARTS HERE
+
+//..............................................................
+//.EEEEEEEEEEEEEVV....VVVV.VEEEEEEEEEE.ENNN....NNN.NNTTTTTTTTT..
+//.EEEEEEEEEEEEEVV....VVVV.VEEEEEEEEEE.ENNNN...NNN.NNTTTTTTTTT..
+//.EEEEEEEEEEEEEVVV...VVVV.VEEEEEEEEEE.ENNNN...NNN.NNTTTTTTTTT..
+//.EEEE........EVVV..VVVV..VEEE........ENNNNN..NNN.....TTTT.....
+//.EEEEEEEEEE..EVVV..VVVV..VEEEEEEEEE..ENNNNNN.NNN.....TTTT.....
+//.EEEEEEEEEE..EVVVV.VVVV..VEEEEEEEEE..ENNNNNN.NNN.....TTTT.....
+//.EEEEEEEEEE...VVVVVVVV...VEEEEEEEEE..ENN.NNNNNNN.....TTTT.....
+//.EEEEEEEEEE...VVVVVVVV...VEEEEEEEEE..ENN.NNNNNNN.....TTTT.....
+//.EEEE..........VVVVVVV...VEEE........ENN..NNNNNN.....TTTT.....
+//.EEEE..........VVVVVV....VEEE........ENN..NNNNNN.....TTTT.....
+//.EEEEEEEEEEE...VVVVVV....VEEEEEEEEEE.ENN...NNNNN.....TTTT.....
+//.EEEEEEEEEEE....VVVVV....VEEEEEEEEEE.ENN...NNNNN.....TTTT.....
+//.EEEEEEEEEEE....VVVV.....VEEEEEEEEEE.ENN....NNNN.....TTTT.....
+//..............................................................
+
     $('#startBtn').on('click', (ev) => {
         ev.preventDefault();
         startGame();
@@ -992,7 +1061,12 @@ $(() => {
 
     $('#checkBtn').on('click', (ev) => {
         ev.preventDefault();
-        check(currentRound); //Process BetCall Function for current player in play
+        check(currentRound); //Process check function
+    })
+
+    $('#foldBtn').on('click', (ev) => {
+        ev.preventDefault();
+        fold(); //Player Fold
     })
 
     $('#newRoundBtn').on('click', (ev) => {
