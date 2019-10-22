@@ -237,7 +237,8 @@ class Helper {
 
     static readOutLoud = (message, activated) => {
         if(activated){
-            let apiKey = "4e30f4ad61ac45bf9bb52143f638d1f7";
+            // let apiKey = "4e30f4ad61ac45bf9bb52143f638d1f7";
+            let apiKey = process.env.VOICERSS_APIKEY;
             let contentLanguage = "en-gb";
 
             $('#textToSpeech')
